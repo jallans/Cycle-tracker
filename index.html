@@ -9,8 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="사이클">
 <meta name="theme-color" content="#0f0f0f">
-<link rel="apple-touch-icon" id="ati">
-<link rel="icon" id="fav" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=347bd67b719b732a6fc990157f14c71c"></script>
 <style>
@@ -255,29 +256,6 @@ html,body{height:100%;background:var(--bg);font-family:'DM Sans',sans-serif;over
 </div>
 
 <script>
-// ── PWA ICON ──
-const BIKE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#0f0f0f"/><circle cx="140" cy="340" r="85" fill="none" stroke="#b8ff00" stroke-width="30"/><circle cx="372" cy="340" r="85" fill="none" stroke="#b8ff00" stroke-width="30"/><path d="M140 340L240 168H372" fill="none" stroke="#b8ff00" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/><path d="M140 340L256 248L372 340" fill="none" stroke="#b8ff00" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/><line x1="372" y1="168" x2="420" y2="138" stroke="#b8ff00" stroke-width="24" stroke-linecap="round"/><line x1="408" y1="125" x2="438" y2="155" stroke="#b8ff00" stroke-width="24" stroke-linecap="round"/><line x1="228" y1="168" x2="272" y2="168" stroke="#b8ff00" stroke-width="24" stroke-linecap="round"/><circle cx="256" cy="310" r="24" fill="none" stroke="#b8ff00" stroke-width="20"/><circle cx="256" cy="120" r="18" fill="#b8ff00"/></svg>`;
-(function(){
-  const blob=new Blob([BIKE_SVG],{type:'image/svg+xml'});
-  const url=URL.createObjectURL(blob);
-  const img=new Image();
-  img.onload=()=>{
-    const c=document.createElement('canvas');c.width=c.height=512;
-    c.getContext('2d').drawImage(img,0,0,512,512);
-    const png=c.toDataURL('image/png');
-    document.getElementById('ati').href=png;
-    document.getElementById('fav').href=url;
-    try{
-      const m={name:'사이클 트래커',short_name:'사이클',description:'자전거 라이딩 네비게이션',
-        start_url:location.href,display:'standalone',orientation:'portrait',
-        background_color:'#0f0f0f',theme_color:'#b8ff00',
-        icons:[{src:png,sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
-      const ml=document.createElement('link');ml.rel='manifest';
-      ml.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/json'}));
-      document.head.appendChild(ml);
-    }catch(e){}
-  };img.src=url;
-})();
 
 // ── STATE ──
 const S={
