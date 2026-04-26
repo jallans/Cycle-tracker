@@ -403,8 +403,10 @@ function redrawRoute(idx){
   if(rFull){rFull.setMap(null);rFull=null;}
   const passed=S.routePts.slice(0,idx+1).map(p=>new kakao.maps.LatLng(p.la,p.ln));
   const remain=S.routePts.slice(idx).map(p=>new kakao.maps.LatLng(p.la,p.ln));
-  if(passed.length>1)rPassed=new kakao.maps.Polyline({path:passed,strokeWeight:6,strokeColor:'#3a3a3a',strokeOpacity:1,strokeStyle:'solid',map});
-  if(remain.length>1)rRemain=new kakao.maps.Polyline({path:remain,strokeWeight:7,strokeColor:'#b8ff00',strokeOpacity:.9,strokeStyle:'solid',map});
+  // 지나온 길: 어두운 빨강
+  if(passed.length>1)rPassed=new kakao.maps.Polyline({path:passed,strokeWeight:6,strokeColor:'#660000',strokeOpacity:.6,strokeStyle:'solid',map});
+  // 남은 길: 밝은 빨강
+  if(remain.length>1)rRemain=new kakao.maps.Polyline({path:remain,strokeWeight:8,strokeColor:'#FF0000',strokeOpacity:.9,strokeStyle:'solid',map});
 }
 
 // ── RIDE ──
@@ -448,7 +450,7 @@ function stopRide(){
   // Reset route
   if(S.routePts.length){
     if(rPassed){rPassed.setMap(null);rPassed=null;}if(rRemain){rRemain.setMap(null);rRemain=null;}
-    rFull=new kakao.maps.Polyline({path:S.routePts.map(p=>new kakao.maps.LatLng(p.la,p.ln)),strokeWeight:6,strokeColor:'#b8ff00',strokeOpacity:.85,strokeStyle:'solid',map});
+    rFull=new kakao.maps.Polyline({path:S.routePts.map(p=>new kakao.maps.LatLng(p.la,p.ln)),strokeWeight:8,strokeColor:'#FF0000',strokeOpacity:.85,strokeStyle:'solid',map});
   }
 }
 function rideMs(){if(!S.t0)return 0;let p=S.pausedMs;if(S.paused&&S.pauseStart)p+=Date.now()-S.pauseStart;return Date.now()-S.t0-p;}
@@ -505,21 +507,33 @@ function pick(la,ln,name){
   getRoute(curLat||la-.01,curLng||ln-.01,la,ln);
 }
 
-// ── ROUTING (OSRM) ──
+// ── ROUTING (BRouter - 자전거 안전 경로) ──
 async function getRoute(la1,ln1,la2,ln2){
   try{
-    const r=await fetch(`https://router.project-osrm.org/route/v1/cycling/${ln1},${la1};${ln2},${la2}?overview=full&geometries=geojson`);
+    // BRouter safety 프로필: 자전거 전용도로/인도 우선, 자동차 도로 회피
+    const url=`https://brouter.de/brouter?lonlats=${ln1},${la1}|${ln2},${la2}&profile=safety&alternativeidx=0&format=geojson`;
+    const r=await fetch(url);
     const d=await r.json();
-    if(d.routes&&d.routes.length){
-      const rt=d.routes[0];
-      const km=(rt.distance/1000).toFixed(1),min=Math.round(rt.duration/60);
-      document.getElementById('rv-d').textContent=km;document.getElementById('rv-t').textContent=min;
-      document.getElementById('rs').textContent='자전거 경로 준비됨';
+    if(d.features&&d.features.length){
+      const rt=d.features[0];
+      const distM=rt.properties['track-length'];
+      const timeS=rt.properties['total-time'];
+      const km=(distM/1000).toFixed(1),min=Math.round(timeS/60);
+      document.getElementById('rv-d').textContent=km;
+      document.getElementById('rv-t').textContent=min;
+      document.getElementById('rs').textContent='안전 경로 (자전거도로·인도 우선)';
       S.routePts=rt.geometry.coordinates.map(([lng,lat])=>({la:lat,ln:lng}));S.routeIdx=0;
       if(rFull)rFull.setMap(null);if(rPassed){rPassed.setMap(null);rPassed=null;}if(rRemain){rRemain.setMap(null);rRemain=null;}
-      rFull=new kakao.maps.Polyline({path:S.routePts.map(p=>new kakao.maps.LatLng(p.la,p.ln)),strokeWeight:6,strokeColor:'#b8ff00',strokeOpacity:.88,strokeStyle:'solid',map});
+      rFull=new kakao.maps.Polyline({path:S.routePts.map(p=>new kakao.maps.LatLng(p.la,p.ln)),strokeWeight:8,strokeColor:'#FF0000',strokeOpacity:.85,strokeStyle:'solid',map});
+      // 지도 범위 자동 조정
+      const bounds=new kakao.maps.LatLngBounds();
+      S.routePts.forEach(p=>bounds.extend(new kakao.maps.LatLng(p.la,p.ln)));
+      map.setBounds(bounds,100,30,220,30);
     }
-  }catch(e){document.getElementById('rs').textContent='경로를 불러올 수 없어요';}
+  }catch(e){
+    console.error(e);
+    document.getElementById('rs').textContent='경로를 불러올 수 없어요';
+  }
 }
 function clearRoute(){
   S.destName='';S.destCoord=null;S.routePts=[];S.routeIdx=0;
